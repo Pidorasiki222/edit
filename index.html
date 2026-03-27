@@ -1,71 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Transparent Monaco</title>
+<meta charset="UTF-8">
+<title>Ultra Transparent Monaco</title>
 
-    <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            background: url('https://picsum.photos/1920/1080') no-repeat center/cover;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: url('https://picsum.photos/1920/1080') no-repeat center/cover;
+        overflow: hidden;
+    }
 
-        #editor {
-            width: 80%;
-            height: 80%;
-            backdrop-filter: blur(20px);
-            border-radius: 12px;
-            overflow: hidden;
-        }
+    #editor {
+        position: fixed;
+        inset: 0;
+    }
 
-        /* 💀 Делаем фон редактора прозрачным */
-        .monaco-editor,
-        .monaco-editor-background,
-        .monaco-editor .inputarea.ime-input {
-            background-color: transparent !important;
-        }
+    /* ☠️ УБИВАЕМ ВСЕ ФОНЫ */
+    .monaco-editor,
+    .monaco-editor-background,
+    .monaco-editor .margin,
+    .monaco-editor .inputarea.ime-input,
+    .monaco-editor .minimap,
+    .monaco-editor .decorationsOverviewRuler,
+    .monaco-editor .scroll-decoration {
+        background: transparent !important;
+    }
 
-        /* Доп — убираем минимап фон */
-        .monaco-editor .minimap {
-            background-color: transparent !important;
-        }
-    </style>
+    /* убираем текущую строку */
+    .monaco-editor .current-line {
+        background: transparent !important;
+    }
+
+    /* убираем выделение строки */
+    .monaco-editor .lineHighlight {
+        background: transparent !important;
+    }
+
+    /* курсор оставляем */
+    .monaco-editor .cursor {
+        background: #ffffff !important;
+    }
+
+    /* выделение текста (чтобы хоть что-то видно было) */
+    .monaco-editor .selected-text {
+        background: rgba(255,255,255,0.2) !important;
+    }
+
+    /* скрываем gutter (номера строк фон) */
+    .monaco-editor .margin {
+        opacity: 0.3;
+    }
+</style>
 </head>
-<body>
 
+<body>
 <div id="editor"></div>
 
 <script src="https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js"></script>
 <script>
-    require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' } });
+require.config({
+    paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' }
+});
 
-    require(['vs/editor/editor.main'], function () {
-        monaco.editor.create(document.getElementById('editor'), {
-            value: `// yo 👀
-function hello() {
-    console.log("transparent vibes");
-}`,
-            language: 'javascript',
+require(['vs/editor/editor.main'], function () {
 
-            theme: 'vs-dark',
-
-            /* ⚡ ключевые штуки */
-            automaticLayout: true,
-            minimap: { enabled: true },
-            fontSize: 14,
-
-            /* 💀 делаем прозрачным */
-            renderLineHighlight: 'none',
-            scrollbar: {
-                vertical: 'visible',
-                horizontal: 'visible'
-            }
-        });
+    monaco.editor.defineTheme('transparent-theme', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+            { token: '', background: '00000000' } // 💀 прозрачный фон
+        ],
+        colors: {
+            'editor.background': '#00000000',
+            'editorGutter.background': '#00000000',
+            'editorLineNumber.foreground': '#aaaaaa',
+            'editorCursor.foreground': '#ffffff',
+            'editor.selectionBackground': '#ffffff33',
+            'editor.lineHighlightBackground': '#00000000'
+        }
     });
+
+    monaco.editor.create(document.getElementById('editor'), {
+        value: `// full transparent mode 😎
+function vibe() {
+    console.log("no background, only code");
+}`,
+        language: 'javascript',
+        theme: 'transparent-theme',
+
+        automaticLayout: true,
+        fontSize: 16,
+
+        /* 💀 убираем всё лишнее */
+        minimap: { enabled: false },
+        glyphMargin: false,
+        folding: false,
+        lineNumbersMinChars: 3,
+
+        renderLineHighlight: 'none',
+        overviewRulerBorder: false,
+        hideCursorInOverviewRuler: true
+    });
+});
 </script>
 
 </body>
