@@ -1,252 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-
-<style>
-html, body {
-    margin: 0;
-    height: 100%;
-    background: url('https://picsum.photos/1920/1080') center/cover;
-    overflow: hidden;
-}
-
-/* 🔝 TAB BAR */
-#tabs {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px;
-    backdrop-filter: blur(12px);
-    z-index: 10;
-}
-
-/* ✨ TAB */
-.tab {
-    padding: 6px 14px;
-    background: rgba(0,0,0,0.35);
-    border-radius: 8px;
-    color: white;
-    cursor: pointer;
-    font-family: monospace;
-
-    display: flex;
-    align-items: center;
-
-    transition: all 0.2s ease;
-    transform: scale(0.95);
-    opacity: 0;
-    animation: tabAppear 0.25s ease forwards;
-}
-
-@keyframes tabAppear {
-    to {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-.tab:hover {
-    background: rgba(255,255,255,0.15);
-    transform: scale(1.05);
-}
-
-.tab.active {
-    background: rgba(255,255,255,0.25);
-}
-
-/* ❌ close */
-.close {
-    margin-left: 8px;
-    color: #ff6b6b;
-    transition: 0.2s;
-}
-
-.close:hover {
-    color: #ff0000;
-}
-
-/* ➕ BIG GREY BUTTON */
-#add {
-    margin-left: auto;
-    padding: 10px 18px;
-    border-radius: 12px;
-
-    background: rgba(180,180,180,0.3);
-    color: #eee;
-
-    font-size: 20px;
-    font-weight: bold;
-
-    cursor: pointer;
-
-    transition: all 0.2s ease;
-}
-
-#add:hover {
-    background: rgba(220,220,220,0.5);
-    transform: scale(1.1);
-}
-
-/* 🖥 EDITOR */
-#editor {
-    position: fixed;
-    top: 48px;
-    bottom: 0;
-    left: 0;
-    right: 0;
-}
-
-/* ☠️ FULL TRANSPARENT MONACO */
-.monaco-editor,
-.monaco-editor-background,
-.monaco-editor .margin,
-.monaco-editor .inputarea,
-.monaco-editor .minimap,
-.monaco-editor .decorationsOverviewRuler {
-    background: transparent !important;
-}
-
-.monaco-editor .current-line,
-.monaco-editor .view-overlays {
-    background: transparent !important;
-}
-</style>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: transparent; }
+        #container { width: 100%; height: 100%; background: transparent; }
+        /* Делаем Monaco прозрачным */
+        .monaco-editor, .monaco-editor-background, .monaco-editor .inputarea.ime-input {
+            background-color: rgba(15, 15, 15, 0.7) !important;
+        }
+    </style>
 </head>
-
 <body>
-
-<div id="tabs"></div>
-<div id="editor"></div>
-
-<script src="https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js"></script>
-<script>
-require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' } });
-
-require(['vs/editor/editor.main'], function () {
-
-    monaco.editor.defineTheme('transparent', {
-        base: 'vs-dark',
-        inherit: true,
-        colors: {
-            'editor.background': '#00000000',
-            'editorGutter.background': '#00000000',
-            'editor.lineHighlightBackground': '#00000000'
-        }
-    });
-
-    const editor = monaco.editor.create(document.getElementById('editor'), {
-        value: '',
-        language: 'javascript',
-        theme: 'transparent',
-        automaticLayout: true,
-        minimap: { enabled: false },
-        renderLineHighlight: 'none'
-    });
-
-    let tabs = [];
-    let current = null;
-    let id = 0;
-
-    function addTab() {
-        let model = monaco.editor.createModel("// new file 😎", "javascript");
-
-        let tab = {
-            id: id++,
-            name: "file" + id + ".js",
-            model
-        };
-
-        tabs.push(tab);
-        switchTab(tab.id);
-        drawTabs();
-    }
-
-    function switchTab(tabId) {
-        let tab = tabs.find(t => t.id === tabId);
-        if (!tab) return;
-
-        current = tab;
-        editor.setModel(tab.model);
-        drawTabs();
-    }
-
-    function closeTab(tabId) {
-        let i = tabs.findIndex(t => t.id === tabId);
-        if (i === -1) return;
-
-        tabs[i].model.dispose();
-        tabs.splice(i, 1);
-
-        if (tabs.length) {
-            switchTab(tabs[Math.max(0, i - 1)].id);
-        } else {
-            editor.setModel(null);
-        }
-
-        drawTabs();
-    }
-
-    function renameTab(tabId) {
-        let tab = tabs.find(t => t.id === tabId);
-        let name = prompt("Rename:", tab.name);
-        if (name) tab.name = name;
-        drawTabs();
-    }
-
-    function drawTabs() {
-        let el = document.getElementById('tabs');
-        el.innerHTML = '';
-
-        tabs.forEach(t => {
-            let tab = document.createElement('div');
-            tab.className = 'tab' + (t === current ? ' active' : '');
-
-            tab.textContent = t.name;
-
-            tab.onclick = () => switchTab(t.id);
-            tab.ondblclick = () => renameTab(t.id);
-
-            let close = document.createElement('span');
-            close.textContent = ' ×';
-            close.className = 'close';
-
-            close.onclick = (e) => {
-                e.stopPropagation();
-
-                // 💥 анимация удаления
-                tab.style.transform = "scale(0.8)";
-                tab.style.opacity = "0";
-
-                setTimeout(() => {
-                    closeTab(t.id);
-                }, 150);
-            };
-
-            tab.appendChild(close);
-            el.appendChild(tab);
+    <div id="container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
+    <script>
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' }});
+        let editor;
+        require(['vs/editor/editor.main'], function() {
+            editor = monaco.editor.create(document.getElementById('container'), {
+                value: "// Energy Editor Loaded",
+                language: 'javascript',
+                theme: 'vs-dark',
+                transparentBackground: true,
+                automaticLayout: true,
+                fontFamily: "Cascadia Code, Consolas",
+                fontSize: 14,
+                minimap: { enabled: false }
+            });
         });
 
-        let add = document.createElement('div');
-        add.id = 'add';
-        add.textContent = '+';
-
-        add.onclick = () => {
-            addTab();
-        };
-
-        el.appendChild(add);
-    }
-
-    // 🚀 старт
-    addTab();
-});
-</script>
-
+        function setText(text) {
+            editor.setValue(text);
+        }
+    </script>
 </body>
 </html>
