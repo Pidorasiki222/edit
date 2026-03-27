@@ -1,18 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Monaco Tabs</title>
 
 <style>
 html, body {
     margin: 0;
     height: 100%;
-    background: url('https://picsum.photos/1920/1080') no-repeat center/cover;
-    overflow: hidden;
+    background: url('https://picsum.photos/1920/1080') center/cover;
 }
 
-/* 🔝 панель табов */
+/* 🔝 TAB BAR */
 #tabs {
     position: fixed;
     top: 0;
@@ -21,21 +19,18 @@ html, body {
     height: 40px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     padding: 5px;
     backdrop-filter: blur(10px);
+    z-index: 10;
 }
 
-/* 🧠 таб */
 .tab {
-    padding: 6px 12px;
-    border-radius: 8px;
-    background: rgba(0,0,0,0.3);
+    padding: 5px 10px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 6px;
     color: white;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
     font-family: monospace;
 }
 
@@ -43,22 +38,19 @@ html, body {
     background: rgba(255,255,255,0.2);
 }
 
-/* ❌ кнопка закрытия */
 .close {
+    margin-left: 5px;
+    color: red;
     cursor: pointer;
-    color: #ff6b6b;
 }
 
-/* ➕ кнопка */
-#addTab {
+#add {
     margin-left: auto;
-    padding: 6px 12px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 8px;
     cursor: pointer;
+    color: white;
 }
 
-/* 🖥 редактор */
+/* 🖥 EDITOR */
 #editor {
     position: fixed;
     top: 40px;
@@ -67,10 +59,19 @@ html, body {
     right: 0;
 }
 
-/* 💀 прозрачность Monaco */
+/* ☠️ ЖЁСТКИЙ OVERRIDE ПРОЗРАЧНОСТИ */
 .monaco-editor,
 .monaco-editor-background,
-.monaco-editor .margin {
+.monaco-editor .margin,
+.monaco-editor .inputarea,
+.monaco-editor .minimap,
+.monaco-editor .decorationsOverviewRuler {
+    background: transparent !important;
+}
+
+/* убираем текущую строку */
+.monaco-editor .current-line,
+.monaco-editor .view-overlays {
     background: transparent !important;
 }
 </style>
@@ -83,127 +84,113 @@ html, body {
 
 <script src="https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js"></script>
 <script>
-require.config({
-    paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' }
-});
+require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' } });
 
 require(['vs/editor/editor.main'], function () {
 
-    // 🎨 прозрачная тема
+    // 🎨 прозрачная тема (ВАЖНО)
     monaco.editor.defineTheme('transparent', {
         base: 'vs-dark',
         inherit: true,
+        rules: [],
         colors: {
-            'editor.background': '#00000000'
+            'editor.background': '#00000000',
+            'editorGutter.background': '#00000000',
+            'editorLineNumber.foreground': '#aaaaaa',
+            'editor.lineHighlightBackground': '#00000000'
         }
     });
 
-    let editor = monaco.editor.create(document.getElementById('editor'), {
+    const editor = monaco.editor.create(document.getElementById('editor'), {
         value: '',
         language: 'javascript',
         theme: 'transparent',
         automaticLayout: true,
-        minimap: { enabled: false }
+        minimap: { enabled: false },
+        renderLineHighlight: 'none'
     });
 
     let tabs = [];
-    let currentTab = null;
-    let tabId = 0;
+    let current = null;
+    let id = 0;
 
-    function createTab(name = "file" + tabId + ".js") {
-        let model = monaco.editor.createModel(
-            "// new file ",
-            "lua"
-        );
+    function addTab() {
+        let model = monaco.editor.createModel("// new file", "javascript");
 
-        let tab = {
-            id: tabId++,
-            name,
-            model
-        };
-
+        let tab = { id: id++, name: "file" + id + ".js", model };
         tabs.push(tab);
-        renderTabs();
+
         switchTab(tab.id);
+        drawTabs();
     }
 
-    function switchTab(id) {
-        let tab = tabs.find(t => t.id === id);
+    function switchTab(tabId) {
+        let tab = tabs.find(t => t.id === tabId);
         if (!tab) return;
 
-        currentTab = tab;
+        current = tab;
         editor.setModel(tab.model);
-        renderTabs();
+        drawTabs();
     }
 
-    function closeTab(id) {
-        let index = tabs.findIndex(t => t.id === id);
-        if (index === -1) return;
+    function closeTab(tabId) {
+        let i = tabs.findIndex(t => t.id === tabId);
+        if (i === -1) return;
 
-        tabs[index].model.dispose();
-        tabs.splice(index, 1);
+        tabs[i].model.dispose();
+        tabs.splice(i, 1);
 
-        if (tabs.length > 0) {
-            switchTab(tabs[Math.max(0, index - 1)].id);
+        if (tabs.length) {
+            switchTab(tabs[0].id);
         } else {
             editor.setModel(null);
         }
 
-        renderTabs();
+        drawTabs();
     }
 
-    function renameTab(id) {
-        let tab = tabs.find(t => t.id === id);
-        if (!tab) return;
-
-        let newName = prompt("Rename file:", tab.name);
-        if (newName) {
-            tab.name = newName;
-            renderTabs();
-        }
+    function renameTab(tabId) {
+        let tab = tabs.find(t => t.id === tabId);
+        let name = prompt("rename:", tab.name);
+        if (name) tab.name = name;
+        drawTabs();
     }
 
-    function renderTabs() {
-        let container = document.getElementById('tabs');
-        container.innerHTML = '';
+    function drawTabs() {
+        let el = document.getElementById('tabs');
+        el.innerHTML = '';
 
-        tabs.forEach(tab => {
-            let el = document.createElement('div');
-            el.className = 'tab' + (tab === currentTab ? ' active' : '');
+        tabs.forEach(t => {
+            let tab = document.createElement('div');
+            tab.className = 'tab' + (t === current ? ' active' : '');
+            tab.textContent = t.name;
 
-            el.innerHTML = `
-                <span class="name">${tab.name}</span>
-                <span class="close">×</span>
-            `;
+            tab.onclick = () => switchTab(t.id);
+            tab.ondblclick = () => renameTab(t.id);
 
-            el.onclick = () => switchTab(tab.id);
+            let close = document.createElement('span');
+            close.textContent = ' ×';
+            close.className = 'close';
 
-            // ❌ закрытие
-            el.querySelector('.close').onclick = (e) => {
+            close.onclick = (e) => {
                 e.stopPropagation();
-                closeTab(tab.id);
+                closeTab(t.id);
             };
 
-            // ✏️ rename (двойной клик)
-            el.ondblclick = (e) => {
-                e.stopPropagation();
-                renameTab(tab.id);
-            };
-
-            container.appendChild(el);
+            tab.appendChild(close);
+            el.appendChild(tab);
         });
 
-        // ➕ кнопка
         let add = document.createElement('div');
-        add.id = "addTab";
-        add.innerText = "+";
-        add.onclick = () => createTab();
+        add.id = 'add';
+        add.textContent = '+';
+        add.onclick = addTab;
 
-        container.appendChild(add);
+        el.appendChild(add);
     }
 
     // 🚀 старт
-    createTab("main.js");
+    addTab();
 });
 </script>
 
