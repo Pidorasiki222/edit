@@ -2,61 +2,83 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Ultra Transparent Monaco</title>
+<title>Monaco Tabs</title>
 
 <style>
-    html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        background: url('https://picsum.photos/1920/1080') no-repeat center/cover;
-        overflow: hidden;
-    }
+html, body {
+    margin: 0;
+    height: 100%;
+    background: url('https://picsum.photos/1920/1080') no-repeat center/cover;
+    overflow: hidden;
+}
 
-    #editor {
-        position: fixed;
-        inset: 0;
-    }
+/* 🔝 панель табов */
+#tabs {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px;
+    backdrop-filter: blur(10px);
+}
 
-    /* ☠️ УБИВАЕМ ВСЕ ФОНЫ */
-    .monaco-editor,
-    .monaco-editor-background,
-    .monaco-editor .margin,
-    .monaco-editor .inputarea.ime-input,
-    .monaco-editor .minimap,
-    .monaco-editor .decorationsOverviewRuler,
-    .monaco-editor .scroll-decoration {
-        background: transparent !important;
-    }
+/* 🧠 таб */
+.tab {
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.3);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: monospace;
+}
 
-    /* убираем текущую строку */
-    .monaco-editor .current-line {
-        background: transparent !important;
-    }
+.tab.active {
+    background: rgba(255,255,255,0.2);
+}
 
-    /* убираем выделение строки */
-    .monaco-editor .lineHighlight {
-        background: transparent !important;
-    }
+/* ❌ кнопка закрытия */
+.close {
+    cursor: pointer;
+    color: #ff6b6b;
+}
 
-    /* курсор оставляем */
-    .monaco-editor .cursor {
-        background: #ffffff !important;
-    }
+/* ➕ кнопка */
+#addTab {
+    margin-left: auto;
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    cursor: pointer;
+}
 
-    /* выделение текста (чтобы хоть что-то видно было) */
-    .monaco-editor .selected-text {
-        background: rgba(255,255,255,0.2) !important;
-    }
+/* 🖥 редактор */
+#editor {
+    position: fixed;
+    top: 40px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
 
-    /* скрываем gutter (номера строк фон) */
-    .monaco-editor .margin {
-        opacity: 0.3;
-    }
+/* 💀 прозрачность Monaco */
+.monaco-editor,
+.monaco-editor-background,
+.monaco-editor .margin {
+    background: transparent !important;
+}
 </style>
 </head>
 
 <body>
+
+<div id="tabs"></div>
 <div id="editor"></div>
 
 <script src="https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js"></script>
@@ -67,41 +89,121 @@ require.config({
 
 require(['vs/editor/editor.main'], function () {
 
-    monaco.editor.defineTheme('transparent-theme', {
+    // 🎨 прозрачная тема
+    monaco.editor.defineTheme('transparent', {
         base: 'vs-dark',
         inherit: true,
-        rules: [
-            { token: '', background: '00000000' } // 💀 прозрачный фон
-        ],
         colors: {
-            'editor.background': '#00000000',
-            'editorGutter.background': '#00000000',
-            'editorLineNumber.foreground': '#aaaaaa',
-            'editorCursor.foreground': '#ffffff',
-            'editor.selectionBackground': '#ffffff33',
-            'editor.lineHighlightBackground': '#00000000'
+            'editor.background': '#00000000'
         }
     });
 
-    monaco.editor.create(document.getElementById('editor'), {
-        value: `// enrgy.gpt
-}`,
+    let editor = monaco.editor.create(document.getElementById('editor'), {
+        value: '',
         language: 'javascript',
-        theme: 'transparent-theme',
-
+        theme: 'transparent',
         automaticLayout: true,
-        fontSize: 16,
-
-        /* 💀 убираем всё лишнее */
-        minimap: { enabled: false },
-        glyphMargin: false,
-        folding: false,
-        lineNumbersMinChars: 3,
-
-        renderLineHighlight: 'none',
-        overviewRulerBorder: false,
-        hideCursorInOverviewRuler: true
+        minimap: { enabled: false }
     });
+
+    let tabs = [];
+    let currentTab = null;
+    let tabId = 0;
+
+    function createTab(name = "file" + tabId + ".js") {
+        let model = monaco.editor.createModel(
+            "// new file ",
+            "lua"
+        );
+
+        let tab = {
+            id: tabId++,
+            name,
+            model
+        };
+
+        tabs.push(tab);
+        renderTabs();
+        switchTab(tab.id);
+    }
+
+    function switchTab(id) {
+        let tab = tabs.find(t => t.id === id);
+        if (!tab) return;
+
+        currentTab = tab;
+        editor.setModel(tab.model);
+        renderTabs();
+    }
+
+    function closeTab(id) {
+        let index = tabs.findIndex(t => t.id === id);
+        if (index === -1) return;
+
+        tabs[index].model.dispose();
+        tabs.splice(index, 1);
+
+        if (tabs.length > 0) {
+            switchTab(tabs[Math.max(0, index - 1)].id);
+        } else {
+            editor.setModel(null);
+        }
+
+        renderTabs();
+    }
+
+    function renameTab(id) {
+        let tab = tabs.find(t => t.id === id);
+        if (!tab) return;
+
+        let newName = prompt("Rename file:", tab.name);
+        if (newName) {
+            tab.name = newName;
+            renderTabs();
+        }
+    }
+
+    function renderTabs() {
+        let container = document.getElementById('tabs');
+        container.innerHTML = '';
+
+        tabs.forEach(tab => {
+            let el = document.createElement('div');
+            el.className = 'tab' + (tab === currentTab ? ' active' : '');
+
+            el.innerHTML = `
+                <span class="name">${tab.name}</span>
+                <span class="close">×</span>
+            `;
+
+            el.onclick = () => switchTab(tab.id);
+
+            // ❌ закрытие
+            el.querySelector('.close').onclick = (e) => {
+                e.stopPropagation();
+                closeTab(tab.id);
+            };
+
+            // ✏️ rename (двойной клик)
+            el.ondblclick = (e) => {
+                e.stopPropagation();
+                renameTab(tab.id);
+            };
+
+            container.appendChild(el);
+        });
+
+        // ➕ кнопка
+        let add = document.createElement('div');
+        add.id = "addTab";
+        add.innerText = "+";
+        add.onclick = () => createTab();
+
+        container.appendChild(add);
+    }
+
+    // 🚀 старт
+    createTab("main.js");
 });
 </script>
 
