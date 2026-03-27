@@ -8,6 +8,7 @@ html, body {
     margin: 0;
     height: 100%;
     background: url('https://picsum.photos/1920/1080') center/cover;
+    overflow: hidden;
 }
 
 /* 🔝 TAB BAR */
@@ -16,50 +17,92 @@ html, body {
     top: 0;
     left: 0;
     right: 0;
-    height: 40px;
+    height: 48px;
     display: flex;
     align-items: center;
-    gap: 5px;
-    padding: 5px;
-    backdrop-filter: blur(10px);
+    gap: 8px;
+    padding: 6px;
+    backdrop-filter: blur(12px);
     z-index: 10;
 }
 
+/* ✨ TAB */
 .tab {
-    padding: 5px 10px;
-    background: rgba(0,0,0,0.4);
-    border-radius: 6px;
+    padding: 6px 14px;
+    background: rgba(0,0,0,0.35);
+    border-radius: 8px;
     color: white;
     cursor: pointer;
     font-family: monospace;
+
+    display: flex;
+    align-items: center;
+
+    transition: all 0.2s ease;
+    transform: scale(0.95);
+    opacity: 0;
+    animation: tabAppear 0.25s ease forwards;
+}
+
+@keyframes tabAppear {
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.tab:hover {
+    background: rgba(255,255,255,0.15);
+    transform: scale(1.05);
 }
 
 .tab.active {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.25);
 }
 
+/* ❌ close */
 .close {
-    margin-left: 5px;
-    color: red;
-    cursor: pointer;
+    margin-left: 8px;
+    color: #ff6b6b;
+    transition: 0.2s;
 }
 
+.close:hover {
+    color: #ff0000;
+}
+
+/* ➕ BIG GREY BUTTON */
 #add {
     margin-left: auto;
+    padding: 10px 18px;
+    border-radius: 12px;
+
+    background: rgba(180,180,180,0.3);
+    color: #eee;
+
+    font-size: 20px;
+    font-weight: bold;
+
     cursor: pointer;
-    color: white;
+
+    transition: all 0.2s ease;
+}
+
+#add:hover {
+    background: rgba(220,220,220,0.5);
+    transform: scale(1.1);
 }
 
 /* 🖥 EDITOR */
 #editor {
     position: fixed;
-    top: 40px;
+    top: 48px;
     bottom: 0;
     left: 0;
     right: 0;
 }
 
-/* ☠️ ЖЁСТКИЙ OVERRIDE ПРОЗРАЧНОСТИ */
+/* ☠️ FULL TRANSPARENT MONACO */
 .monaco-editor,
 .monaco-editor-background,
 .monaco-editor .margin,
@@ -69,7 +112,6 @@ html, body {
     background: transparent !important;
 }
 
-/* убираем текущую строку */
 .monaco-editor .current-line,
 .monaco-editor .view-overlays {
     background: transparent !important;
@@ -88,15 +130,12 @@ require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' } 
 
 require(['vs/editor/editor.main'], function () {
 
-    // 🎨 прозрачная тема (ВАЖНО)
     monaco.editor.defineTheme('transparent', {
         base: 'vs-dark',
         inherit: true,
-        rules: [],
         colors: {
             'editor.background': '#00000000',
             'editorGutter.background': '#00000000',
-            'editorLineNumber.foreground': '#aaaaaa',
             'editor.lineHighlightBackground': '#00000000'
         }
     });
@@ -115,11 +154,15 @@ require(['vs/editor/editor.main'], function () {
     let id = 0;
 
     function addTab() {
-        let model = monaco.editor.createModel("// new file", "javascript");
+        let model = monaco.editor.createModel("// new file 😎", "javascript");
 
-        let tab = { id: id++, name: "file" + id + ".js", model };
+        let tab = {
+            id: id++,
+            name: "file" + id + ".js",
+            model
+        };
+
         tabs.push(tab);
-
         switchTab(tab.id);
         drawTabs();
     }
@@ -141,7 +184,7 @@ require(['vs/editor/editor.main'], function () {
         tabs.splice(i, 1);
 
         if (tabs.length) {
-            switchTab(tabs[0].id);
+            switchTab(tabs[Math.max(0, i - 1)].id);
         } else {
             editor.setModel(null);
         }
@@ -151,7 +194,7 @@ require(['vs/editor/editor.main'], function () {
 
     function renameTab(tabId) {
         let tab = tabs.find(t => t.id === tabId);
-        let name = prompt("rename:", tab.name);
+        let name = prompt("Rename:", tab.name);
         if (name) tab.name = name;
         drawTabs();
     }
@@ -163,6 +206,7 @@ require(['vs/editor/editor.main'], function () {
         tabs.forEach(t => {
             let tab = document.createElement('div');
             tab.className = 'tab' + (t === current ? ' active' : '');
+
             tab.textContent = t.name;
 
             tab.onclick = () => switchTab(t.id);
@@ -174,7 +218,14 @@ require(['vs/editor/editor.main'], function () {
 
             close.onclick = (e) => {
                 e.stopPropagation();
-                closeTab(t.id);
+
+                // 💥 анимация удаления
+                tab.style.transform = "scale(0.8)";
+                tab.style.opacity = "0";
+
+                setTimeout(() => {
+                    closeTab(t.id);
+                }, 150);
             };
 
             tab.appendChild(close);
@@ -184,7 +235,10 @@ require(['vs/editor/editor.main'], function () {
         let add = document.createElement('div');
         add.id = 'add';
         add.textContent = '+';
-        add.onclick = addTab;
+
+        add.onclick = () => {
+            addTab();
+        };
 
         el.appendChild(add);
     }
