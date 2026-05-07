@@ -1,408 +1,112 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Transparent Monaco Tabs</title>
+<title>Ultra Transparent Monaco</title>
 
 <style>
-*{
-    box-sizing:border-box;
-}
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: url('https://picsum.photos/1920/1080') no-repeat center/cover;
+        overflow: hidden;
+    }
 
-html,body{
-    margin:0;
-    width:100%;
-    height:100%;
-    overflow:hidden;
+    #editor {
+        position: fixed;
+        inset: 0;
+    }
 
-    font-family:Inter,sans-serif;
+    /* ☠️ УБИВАЕМ ВСЕ ФОНЫ */
+    .monaco-editor,
+    .monaco-editor-background,
+    .monaco-editor .margin,
+    .monaco-editor .inputarea.ime-input,
+    .monaco-editor .minimap,
+    .monaco-editor .decorationsOverviewRuler,
+    .monaco-editor .scroll-decoration {
+        background: transparent !important;
+    }
 
-    background:
-        linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),
-        url("https://picsum.photos/1920/1080")
-        center/cover no-repeat;
-}
+    /* убираем текущую строку */
+    .monaco-editor .current-line {
+        background: transparent !important;
+    }
 
-/* TOPBAR */
+    /* убираем выделение строки */
+    .monaco-editor .lineHighlight {
+        background: transparent !important;
+    }
 
-#topbar{
-    width:100%;
-    height:42px;
+    /* курсор оставляем */
+    .monaco-editor .cursor {
+        background: #ffffff !important;
+    }
 
-    display:flex;
-    align-items:center;
+    /* выделение текста (чтобы хоть что-то видно было) */
+    .monaco-editor .selected-text {
+        background: rgba(255,255,255,0.2) !important;
+    }
 
-    gap:6px;
-
-    padding:0 10px;
-
-    backdrop-filter:blur(12px);
-
-    background:rgba(0,0,0,.20);
-
-    border-bottom:
-        1px solid rgba(255,255,255,.05);
-}
-
-/* TABS */
-
-#tabs{
-    display:flex;
-    align-items:center;
-
-    gap:6px;
-
-    flex:1;
-
-    overflow-x:auto;
-}
-
-#tabs::-webkit-scrollbar{
-    display:none;
-}
-
-.tab{
-    height:30px;
-
-    min-width:130px;
-
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-
-    padding:0 12px;
-
-    border-radius:8px;
-
-    background:
-        rgba(255,255,255,.05);
-
-    border:
-        1px solid rgba(255,255,255,.05);
-
-    color:
-        rgba(255,255,255,.70);
-
-    backdrop-filter:blur(10px);
-
-    cursor:pointer;
-
-    user-select:none;
-
-    transition:.15s;
-}
-
-.tab:hover{
-    background:
-        rgba(255,255,255,.08);
-}
-
-.tab.active{
-
-    color:white;
-
-    background:
-        rgba(255,255,255,.12);
-
-    border:
-        1px solid rgba(255,255,255,.10);
-}
-
-.close{
-    margin-left:10px;
-
-    opacity:.45;
-
-    transition:.15s;
-}
-
-.close:hover{
-    opacity:1;
-}
-
-/* ADD BUTTON */
-
-#add{
-    width:30px;
-    height:30px;
-
-    border:none;
-    outline:none;
-
-    border-radius:8px;
-
-    background:
-        rgba(255,255,255,.05);
-
-    border:
-        1px solid rgba(255,255,255,.05);
-
-    color:
-        rgba(255,255,255,.75);
-
-    font-size:18px;
-
-    cursor:pointer;
-
-    transition:.15s;
-}
-
-#add:hover{
-
-    background:
-        rgba(255,255,255,.10);
-
-    color:white;
-}
-
-/* EDITOR */
-
-#editor{
-    width:100%;
-    height:calc(100vh - 42px);
-
-    backdrop-filter:blur(8px);
-}
-
-/* TRANSPARENT */
-
-.monaco-editor,
-.monaco-editor-background,
-.monaco-editor .inputarea.ime-input,
-.monaco-editor .margin,
-.monaco-editor .monaco-scrollable-element,
-.monaco-scrollable-element{
-    background:transparent!important;
-}
-
-.monaco-editor .current-line,
-.monaco-editor .lineHighlight{
-    background:
-        rgba(255,255,255,.03)!important;
-}
-
-.monaco-editor .selected-text{
-    background:
-        rgba(255,255,255,.10)!important;
-}
-
-.monaco-editor .cursor{
-    background:#fff!important;
-}
-
-.monaco-editor .margin{
-    opacity:.18;
-}
+    /* скрываем gutter (номера строк фон) */
+    .monaco-editor .margin {
+        opacity: 0.3;
+    }
 </style>
 </head>
 
 <body>
-
-<div id="topbar">
-
-    <div id="tabs"></div>
-
-    <button id="add">+</button>
-
-</div>
-
 <div id="editor"></div>
 
 <script src="https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js"></script>
-
 <script>
 require.config({
-    paths:{
-        vs:'https://unpkg.com/monaco-editor@0.45.0/min/vs'
-    }
+    paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' }
 });
 
-require(['vs/editor/editor.main'],()=>{
+require(['vs/editor/editor.main'], function () {
 
-    monaco.editor.defineTheme('transparent-theme',{
-
-        base:'vs-dark',
-
-        inherit:true,
-
-        rules:[],
-
-        colors:{
-
-            'editor.background':'#00000000',
-
-            'editorGutter.background':'#00000000',
-
-            'editorLineNumber.foreground':'#6e7681',
-
-            'editorCursor.foreground':'#ffffff',
-
-            'editor.selectionBackground':'#ffffff18',
-
-            'editor.lineHighlightBackground':'#ffffff08'
+    monaco.editor.defineTheme('transparent-theme', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+            { token: '', background: '00000000' } // 💀 прозрачный фон
+        ],
+        colors: {
+            'editor.background': '#00000000',
+            'editorGutter.background': '#00000000',
+            'editorLineNumber.foreground': '#aaaaaa',
+            'editorCursor.foreground': '#ffffff',
+            'editor.selectionBackground': '#ffffff33',
+            'editor.lineHighlightBackground': '#00000000'
         }
     });
 
-    const editor=
-        monaco.editor.create(
-            document.getElementById('editor'),
-            {
+    monaco.editor.create(document.getElementById('editor'), {
+        value: `print("Hello, world!")`,
+        language: 'javascript',
+        theme: 'transparent-theme',
 
-                value:'',
+        automaticLayout: true,
+        fontSize: 16,
 
-                language:'lua',
+        /* 💀 убираем всё лишнее */
+        minimap: { enabled: false },
+        glyphMargin: false,
+        folding: false,
+        lineNumbersMinChars: 3,
 
-                theme:'transparent-theme',
-
-                automaticLayout:true,
-
-                fontSize:15,
-
-                smoothScrolling:true,
-
-                minimap:{
-                    enabled:false
-                },
-
-                tabSize:6,
-
-                insertSpaces:true,
-
-                detectIndentation:false
-            }
-        );
-
-    /* TABS */
-
-    let tabs=[];
-    let activeTab=null;
-
-    function saveCurrent(){
-
-        const tab=
-            tabs.find(t=>t.id===activeTab);
-
-        if(!tab) return;
-
-        tab.content=
-            editor.getValue();
-    }
-
-    function renderTabs(){
-
-        const wrap=
-            document.getElementById('tabs');
-
-        wrap.innerHTML='';
-
-        tabs.forEach(tab=>{
-
-            const el=
-                document.createElement('div');
-
-            el.className=
-                'tab'+
-                (tab.id===activeTab
-                    ?' active'
-                    :'');
-
-            el.innerHTML=`
-                <span>${tab.title}</span>
-                <span class="close">×</span>
-            `;
-
-            el.onclick=(e)=>{
-
-                if(
-                    e.target.classList.contains('close')
-                ){
-                    closeTab(tab.id);
-                    return;
-                }
-
-                switchTab(tab.id);
-            };
-
-            wrap.appendChild(el);
-        });
-    }
-
-    function switchTab(id){
-
-        saveCurrent();
-
-        activeTab=id;
-
-        const tab=
-            tabs.find(t=>t.id===id);
-
-        editor.setValue(tab.content);
-
-        renderTabs();
-    }
-
-    function addTab(){
-
-        saveCurrent();
-
-        const number=
-            tabs.length+1;
-
-        const tab={
-
-            id:crypto.randomUUID(),
-
-            title:`Tab ${number}`,
-
-            content:'print("Hello, World!")'
-        };
-
-        tabs.push(tab);
-
-        activeTab=tab.id;
-
-        editor.setValue(tab.content);
-
-        renderTabs();
-    }
-
-    function closeTab(id){
-
-        if(tabs.length===1)
-            return;
-
-        const index=
-            tabs.findIndex(t=>t.id===id);
-
-        tabs.splice(index,1);
-
-        if(activeTab===id){
-
-            const next=
-                tabs[index]||
-                tabs[index-1];
-
-            activeTab=next.id;
-
-            editor.setValue(next.content);
-        }
-
-        renderTabs();
-    }
-
-    editor.onDidChangeModelContent(()=>{
-        saveCurrent();
+        renderLineHighlight: 'none',
+        overviewRulerBorder: false,
+        hideCursorInOverviewRuler: true
     });
-
-    document
-        .getElementById('add')
-        .onclick=addTab;
-
-    addTab();
 });
 </script>
 
 </body>
 </html>
+
+сделай чтобы был чуть opacity и добавь мини табы (+ чтобы добавить) и таб (new tab1 -)
+- это закрыть таб
+табы сохраняются
