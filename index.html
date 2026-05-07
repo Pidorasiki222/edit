@@ -1,107 +1,251 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>Ultra Transparent Monaco</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Transparent Editor</title>
 
 <style>
-    html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        background: url('https://picsum.photos/1920/1080') no-repeat center/cover;
-        overflow: hidden;
-    }
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Consolas, monospace;
+}
 
-    #editor {
-        position: fixed;
-        inset: 0;
-    }
+body{
+    width:100vw;
+    height:100vh;
+    background:#0f0f0f;
+    overflow:hidden;
+}
 
-    /* ☠️ УБИВАЕМ ВСЕ ФОНЫ */
-    .monaco-editor,
-    .monaco-editor-background,
-    .monaco-editor .margin,
-    .monaco-editor .inputarea.ime-input,
-    .monaco-editor .minimap,
-    .monaco-editor .decorationsOverviewRuler,
-    .monaco-editor .scroll-decoration {
-        background: transparent !important;
-    }
+/* TOP BAR */
+.topbar{
+    height:42px;
+    display:flex;
+    align-items:flex-end;
+    padding:0 10px;
+}
 
-    /* убираем текущую строку */
-    .monaco-editor .current-line {
-        background: transparent !important;
-    }
+/* TABS */
+.tabs{
+    display:flex;
+    align-items:flex-end;
+    gap:4px;
+}
 
-    /* убираем выделение строки */
-    .monaco-editor .lineHighlight {
-        background: transparent !important;
-    }
+.tab{
+    height:30px;
+    min-width:120px;
 
-    /* курсор оставляем */
-    .monaco-editor .cursor {
-        background: #ffffff !important;
-    }
+    background:#2a2a2a;
 
-    /* выделение текста (чтобы хоть что-то видно было) */
-    .monaco-editor .selected-text {
-        background: rgba(255,255,255,0.2) !important;
-    }
+    border-radius:7px 7px 0 0;
 
-    /* скрываем gutter (номера строк фон) */
-    .monaco-editor .margin {
-        opacity: 0.3;
-    }
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 12px;
+
+    color:#d8d8d8;
+    font-size:14px;
+
+    cursor:pointer;
+    user-select:none;
+
+    transition:.15s;
+}
+
+.tab.active{
+    background:#353535;
+}
+
+.tab:hover{
+    background:#3b3b3b;
+}
+
+.close{
+    margin-left:14px;
+    color:#8f8f8f;
+    transition:.15s;
+}
+
+.close:hover{
+    color:white;
+}
+
+.plus{
+    width:30px;
+    height:30px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    color:#8f8f8f;
+    font-size:22px;
+
+    cursor:pointer;
+    user-select:none;
+
+    transition:.15s;
+}
+
+.plus:hover{
+    color:white;
+}
+
+/* EDITOR */
+.editor{
+    width:100%;
+    height:calc(100vh - 42px);
+
+    background:rgba(20,20,20,0.14);
+    backdrop-filter:blur(6px);
+
+    border-top:1px solid rgba(255,255,255,0.04);
+
+    padding-top:10px;
+
+    overflow:auto;
+}
+
+.line{
+    display:flex;
+    align-items:center;
+
+    height:30px;
+
+    padding:0 18px;
+
+    font-size:18px;
+}
+
+.number{
+    width:45px;
+    color:#666;
+    user-select:none;
+}
+
+.code{
+    flex:1;
+    color:#757575;
+    outline:none;
+    white-space:pre;
+}
 </style>
 </head>
-
 <body>
-<div id="editor"></div>
 
-<script src="https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js"></script>
+<div class="topbar">
+
+    <div class="tabs" id="tabs"></div>
+
+    <div class="plus" onclick="createTab()">+</div>
+
+</div>
+
+<div class="editor" id="editor"></div>
+
 <script>
-require.config({
-    paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' }
-});
+let tabCount = 0;
+let currentTab = null;
 
-require(['vs/editor/editor.main'], function () {
+const tabsContainer = document.getElementById("tabs");
+const editor = document.getElementById("editor");
 
-    monaco.editor.defineTheme('transparent-theme', {
-        base: 'vs-dark',
-        inherit: true,
-        rules: [
-            { token: '', background: '00000000' } // 💀 прозрачный фон
-        ],
-        colors: {
-            'editor.background': '#00000000',
-            'editorGutter.background': '#00000000',
-            'editorLineNumber.foreground': '#aaaaaa',
-            'editorCursor.foreground': '#ffffff',
-            'editor.selectionBackground': '#ffffff33',
-            'editor.lineHighlightBackground': '#00000000'
-        }
+const tabData = {};
+
+function createTab(){
+
+    tabCount++;
+
+    const id = "tab" + tabCount;
+
+    tabData[id] = [
+        "-- Добро пожаловать!",
+        "-- Вставьте любой скрипт или выберите слева"
+    ];
+
+    const tab = document.createElement("div");
+    tab.className = "tab";
+    tab.dataset.id = id;
+
+    tab.innerHTML = `
+        <span>Tab</span>
+        <span class="close">×</span>
+    `;
+
+    tabsContainer.appendChild(tab);
+
+    tab.addEventListener("click", () => openTab(id));
+
+    tab.querySelector(".close").addEventListener("click", (e)=>{
+        e.stopPropagation();
+        removeTab(id, tab);
     });
 
-    monaco.editor.create(document.getElementById('editor'), {
-        value: `print("Hello, world!")`,
-        language: 'javascript',
-        theme: 'transparent-theme',
+    openTab(id);
+}
 
-        automaticLayout: true,
-        fontSize: 16,
+function openTab(id){
 
-        /* 💀 убираем всё лишнее */
-        minimap: { enabled: false },
-        glyphMargin: false,
-        folding: false,
-        lineNumbersMinChars: 3,
+    currentTab = id;
 
-        renderLineHighlight: 'none',
-        overviewRulerBorder: false,
-        hideCursorInOverviewRuler: true
+    document.querySelectorAll(".tab").forEach(t=>{
+        t.classList.remove("active");
     });
-});
+
+    document.querySelector(`[data-id="${id}"]`)
+        .classList.add("active");
+
+    renderEditor();
+}
+
+function removeTab(id, element){
+
+    delete tabData[id];
+
+    element.remove();
+
+    const tabs = document.querySelectorAll(".tab");
+
+    if(tabs.length){
+        openTab(tabs[0].dataset.id);
+    }else{
+        editor.innerHTML = "";
+        currentTab = null;
+    }
+}
+
+function renderEditor(){
+
+    editor.innerHTML = "";
+
+    tabData[currentTab].forEach((text,index)=>{
+
+        const line = document.createElement("div");
+        line.className = "line";
+
+        line.innerHTML = `
+            <div class="number">${index + 1}</div>
+            <div class="code" contenteditable="true">${text}</div>
+        `;
+
+        const code = line.querySelector(".code");
+
+        code.addEventListener("input", ()=>{
+            tabData[currentTab][index] = code.innerText;
+        });
+
+        editor.appendChild(line);
+    });
+}
+
+/* START TAB */
+createTab();
 </script>
 
 </body>
